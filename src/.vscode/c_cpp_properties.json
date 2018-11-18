@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/cj/devel/include",
+                "/home/cj/rambot_ws/devel/include",
+                "/opt/ros/kinetic/include",
+                "/home/cj/src/mpc_control/include",
+                "/home/cj/src/rambot_param/include",
+                "/home/cj/rambot_ws/src/testc/include",
+                "/usr/include"
+            ],
+            "name": "Linux",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

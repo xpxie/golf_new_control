@@ -1,0 +1,22 @@
+<launch>
+
+    <!--joystick driver launch-->
+    <node pkg="log_joy" type="joy_node" name="joy_teleop">
+        <remap from="/joy" to="/joy_parser/joy"/>
+        <param name="autorepeat_rate" type="double" value="10.0" />
+    </node>
+
+    <!--nodelet manager-->
+    <node pkg="nodelet" type="nodelet" name="golf_new_control_nodelet"  args="manager" output="screen"/>
+
+    <!--cmd_vel_mux-->
+    <node pkg="nodelet" type="nodelet" name="cmd_vel_mux"
+          args="load golf_new_control/CmdVelMux golf_new_control_nodelet">
+        <param name="linear_limit" type="double" value="10.0"/>
+        <param name="angular_limit" type="double" value="45.0" />
+	<remap from="/auto/cmd_vel" to="/decision/avoidance"/>
+    </node>
+
+
+
+</launch>

@@ -1,0 +1,23 @@
+<launch>
+    <include file="$(find golf_new_control)/launch/joystick_nodelet.launch"/>
+
+    <!--joy_parser-->
+    <node pkg="nodelet" type="nodelet" name="joy_parser"
+          args="load golf_new_control/JoyParser golf_new_control_nodelet" respawn="true">
+        <remap from="/joy_parser/cmd_vel" to="/joy/cmd_vel"/>
+        <param name="linear_scale" type="double" value="1.5"/>
+        <param name="angular_scale" type="double" value="30.0"/>
+    </node>
+
+
+    <!--can_parser-->
+    <node pkg="nodelet" type="nodelet" name="can_parser"
+          args="load golf_new_control/CanParser golf_new_control_nodelet" output="screen"  respawn="true">
+        <param name="car_max_motor_speed" value="3000"/>
+        <param name="car_max_motor_speed_reverse" value="3000"/>
+    </node>
+    <node pkg="encoder_raw_data_to_odom" type="encoder_decoder" name="encoder_convertor" output="screen" respawn="true">
+	<param name="encoder_serial_port" type="string" value="/dev/encoder"/>
+    </node>
+
+</launch>

@@ -1,0 +1,20 @@
+<launch>
+    <include file="$(find golf_new_control)/launch/joystick_nodelet.launch"/>
+
+    <!--joy_parser-->
+    <node pkg="nodelet" type="nodelet" name="joy_parser"
+          args="load golf_new_control/JoyParser golf_new_control_nodelet">
+        <remap from="/joy_parser/cmd_vel" to="/joy/cmd_vel"/>
+        <param name="linear_scale" type="double" value="0.8"/>
+        <param name="angular_scale" type="double" value="30.0"/>
+    </node>
+
+
+    <!--can_parser-->
+    <node pkg="nodelet" type="nodelet" name="can_parser"
+          args="load golf_new_control/GolfCanParser golf_new_control_nodelet" output="screen">
+        <param name="car_max_motor_speed" value="2000"/>
+        <param name="car_max_motor_speed_reverse" value="2000"/>
+    </node>
+
+</launch>

@@ -1,0 +1,4 @@
+<library path="lib/libnodelet_golf_can_parser">
+    <class name="golf_new_control/GolfCanParser" type="golfmiddleware::GolfCanParser" base_class_type="nodelet::Nodelet">
+    </class>
+</library>
