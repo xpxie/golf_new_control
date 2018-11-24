@@ -12,6 +12,13 @@ namespace golfcar {
         odom_tf_msg_.child_frame_id = "base_link";
     }
 
+	// void EncoderVelocityToOdom::OnInit(ros::NodeHandle nh) {
+	// 	nh_ = nh;
+	// 	odom_2d_ = nh.advertise<nav_msgs::Odometry>("/golfcar/odom", 10);
+    //     odom_tf_msg_.header.frame_id = "odom";
+    //     odom_tf_msg_.child_frame_id = "base_link";
+	// }
+
 
     void EncoderVelocityToOdom::ProcessRawData(const can_msgs::Frame frame) {
 
@@ -52,18 +59,22 @@ namespace golfcar {
 
         // TODO: reconfigure "counter number this period"
         static double lfront;
-        lfront = static_cast<int16_t >(frame.data[2] | frame.data[3] << 8) / 2.0;
+        // lfront = static_cast<int16_t >(frame.data[2] | frame.data[3] << 8) / 2.0;
+		lfront = static_cast<int8_t>(frame.data[1] - 127);
         static double rfront;
-        rfront = static_cast<int16_t >(frame.data[0] | frame.data[1] << 8) / 2.0;
-	
+        // rfront = static_cast<int16_t >(frame.data[0] | frame.data[1] << 8) / 2.0;
+		rfront = static_cast<int8_t>(frame.data[0] - 127);
         static double lrear;
-        lrear = static_cast<int16_t >(frame.data[4] | frame.data[5] << 8) / 2.0;
+        // lrear = static_cast<int16_t >(frame.data[4] | frame.data[5] << 8) / 2.0;
+		lrear = static_cast<int8_t>(frame.data[2] - 127);
         static double rrear;
-        rrear = static_cast<int16_t >(frame.data[6] | frame.data[7] << 8) / 2.0;
-	 ROS_ERROR_STREAM("right rear is:" << rrear);
-	 ROS_ERROR_STREAM("left front is:" << lfront);
-	 ROS_ERROR_STREAM("left rear is:" << lrear);
-	 ROS_ERROR_STREAM("right front is:" << rfront);
+        // rrear = static_cast<int16_t >(frame.data[6] | frame.data[7] << 8) / 2.0;
+		rrear = static_cast<int8_t>(frame.data[3] - 127);
+
+	//  ROS_ERROR_STREAM("right rear is:" << rrear);
+	//  ROS_ERROR_STREAM("left front is:" << lfront);
+	//  ROS_ERROR_STREAM("left rear is:" << lrear);
+	//  ROS_ERROR_STREAM("right front is:" << rfront);
 
         // ROS_INFO_STREAM("period: " << period << "\n"
         //                            << "lfront: " << lfront <<"\n"
@@ -72,15 +83,28 @@ namespace golfcar {
         //                            << "rrear: " << rrear);
 
         static double coefficient;
-        coefficient = diameter_ * M_PI / period / counter_num_per_round_;
+        // coefficient = diameter_ * M_PI / period / counter_num_per_round_;
+		coefficient =( 20 / 128.0 * 2.0 * M_PI )* ( diameter_ / 2.0);
+		static double lfront_linear_vel;
+        lfront_linear_vel = coefficient * lfront;
+        static double rfront_linear_vel;
+        rfront_linear_vel = coefficient * rfront;
         static double lrear_linear_vel;
         lrear_linear_vel = coefficient * lrear;
         static double rrear_linear_vel;
         rrear_linear_vel = coefficient * rrear;
 
+        // ROS_INFO_STREAM(	"\n"
+        //                         	<< "lfront: " << lfront_linear_vel <<"\n"
+        //                            << "rfront: " << rfront_linear_vel << "\n"
+        //                            << "lrear: " << lrear_linear_vel << "\n"
+        //                            << "rrear: " << rrear_linear_vel);
+
+
         static Eigen::Vector3d local_vel;
 	static Eigen::Vector3d last_local_vel;
 
+	
 	local_vel(0) = (lrear_linear_vel + rrear_linear_vel) / 2.0;
 	local_vel(2) = (rrear_linear_vel - lrear_linear_vel) / distance_between_wheels_;
 
@@ -148,4 +172,9 @@ namespace golfcar {
 
 	tf_br_.sendTransform(odom_tf_msg_);
     }
+
+	double EncoderVelocityToOdom::RCfiler(double now_v) {
+		double v_filted = K_ * now_v + (1 - K_) * last_v_;
+		return v_filted;
+	}
 }

@@ -6,10 +6,12 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "/opt/ros/melodic/include",
-                "/home/joey/catkin_ws/src/geodetic_utils/include",
-                "/home/joey/catkin_ws/src/golf_new_control/include",
-                "/usr/include"
+                "/opt/ros/kinetic/include",
+                "/home/alex/catkin_ws/src/geodetic_utils/include",
+                "/home/alex/catkin_ws/src/golf_new_control/include",
+                "/usr/include",
+                "/usr/include/eigen3",
+                "${workspaceFolder}/include"
             ],
             "name": "Linux",
             "intelliSenseMode": "gcc-x64"

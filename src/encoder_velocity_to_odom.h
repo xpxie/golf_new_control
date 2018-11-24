@@ -31,7 +31,9 @@ namespace golfcar
     {
     public:
         EncoderVelocityToOdom(ros::NodeHandle nh);
+        // EncoderVelocityToOdom();
         ~EncoderVelocityToOdom();
+        // void OnInit(ros::NodeHandle);
         void ProcessRawData(const can_msgs::Frame frame);
 
     private:
@@ -54,6 +56,10 @@ namespace golfcar
         void Odom2dOutput(const can_msgs::Frame frame);
 
         ros::Timer serial_reader_;
+        // RC filter
+        double last_v_ = 0.0;
+        double K_ = 0.5;
+        double RCfiler(double now_v);
 
 // tf publisher
 

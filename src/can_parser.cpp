@@ -10,10 +10,12 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include <bitset>
+#include <memory>
 #include "can_bridge.h"
 
 #undef UINT32
 #include "ramlab_msgs.h"
+#include "encoder_velocity_to_odom.h"
 
 #ifndef RAMLAB_RELEASE
 #include <geometry_msgs/Twist.h>
@@ -44,6 +46,9 @@ class CanParser : public nodelet::Nodelet {
   ros::Publisher swa_steer_pub_;
 
   ros::Publisher sonar_pub_;
+
+  std::shared_ptr<golfcar::EncoderVelocityToOdom> encoder_calculator_ptr_;
+  // golfcar::EncoderVelocityToOdom encoder_calculator_;
 
   typedef enum {
     HONK = 0,
@@ -85,7 +90,7 @@ class CanParser : public nodelet::Nodelet {
   int car_max_motor_speed_ = 5500;
   int car_max_motor_speed_reverse_ = 5500;
 
-  double heartbeat_cycle_ = 0.1;
+  double heartbeat_cycle_ = 0.04;
   double trans_receive_cycle_ = 0.005;
   // adjust finished
 
@@ -198,8 +203,8 @@ void CanParser::onInit() {
   //     (static_cast<double>(car_max_motor_speed_reverse_) / 3000.0 *
   //      4.75308642) *
   //     100.0;
-  max_speed_reciprocal_ = 3000.0 / 19.01234567;           // 4.75308642 ;
-  max_speed_reciprocal_reverse_ = -3000.0 / 19.01234567;  // 4.75308642 ;
+  max_speed_reciprocal_ = 3000.0 / 19.7165065 * 3.6;           // 547 ;
+  max_speed_reciprocal_reverse_ = -3000.0 / 19.7165065 * 3.6;  // 4.75308642 ;
 
   {
     std::unique_lock<std::mutex> lock(can_buffer_mutex_);
@@ -216,7 +221,11 @@ void CanParser::onInit() {
   can_bridge_ptr_ =
       std::shared_ptr<cantools::CanBridge>(new cantools::CanBridge());
   can_bridge_ptr_->CanOpen();
-
+  // ROS_WARN_STREAM("ptr_crash");
+  encoder_calculator_ptr_ = shared_ptr<golfcar::EncoderVelocityToOdom>(
+      new golfcar::EncoderVelocityToOdom(nh_));
+  // encoder_calculator_.OnInit(nh_);
+  // ROS_WARN_STREAM("HERE");
   initialize_finished_ = true;
 }
 
@@ -340,7 +349,7 @@ void CanParser::CmdVelHandler(geometry_msgs::TwistConstPtr msg) {
       real_time_steer = static_cast<uint16_t>(
           std::min(-angular_z / 41.0625 * 900 + 900, 1800.0));
 
-      speed_frame_.data[0] = 0x16;  // byte0: 0001 0110 = 0x16
+      speed_frame_.data[0] = 0x15;  // byte0: 0001 0110 = 0x16 forward
       speed_frame_.data[1] = static_cast<uint8_t>(real_time_rpm & 0xFF);
       speed_frame_.data[2] = static_cast<uint8_t>(real_time_rpm >> 8);
       speed_frame_.data[3] = 0x01;
@@ -348,6 +357,7 @@ void CanParser::CmdVelHandler(geometry_msgs::TwistConstPtr msg) {
       speed_frame_.data[5] = static_cast<uint8_t>(real_time_steer & 0xFF);
       speed_frame_.data[6] = static_cast<uint8_t>(real_time_steer >> 8);
       speed_frame_.data[7] = 0x00;
+      ROS_INFO_STREAM(real_time_rpm);
     } else if (fabs(linear_x) <= min_tolerance) {
       static uint16_t real_time_steer;
       real_time_steer = static_cast<uint16_t>(
@@ -372,12 +382,11 @@ void CanParser::CmdVelHandler(geometry_msgs::TwistConstPtr msg) {
       real_time_steer = static_cast<uint16_t>(
           std::min(-angular_z / 41.0625 * 900 + 900, 1800.0));
 
-      speed_frame_.data[0] = 0x15;  // byte0: 0001 0101 = 0x15
+      speed_frame_.data[0] = 0x16;  // byte0: 0001 0101 = 0x15 backward
       speed_frame_.data[1] = static_cast<uint8_t>(real_time_rpm & 0xFF);
       speed_frame_.data[2] = static_cast<uint8_t>(real_time_rpm >> 8);
       speed_frame_.data[3] = 0x01;
       speed_frame_.data[4] = 0x01;
-      speed_frame_.data[5] = 0x01;
       speed_frame_.data[5] = static_cast<uint8_t>(real_time_steer & 0xFF);
       speed_frame_.data[6] = static_cast<uint8_t>(real_time_steer >> 8);
       speed_frame_.data[7] = 0;
@@ -504,12 +513,11 @@ void CanParser::ReceiveCb(const ros::TimerEvent&) {
         feedback_angle_rate_8 = it.data[2];
         static double feedback_angle_rate =
             static_cast<double>(feedback_angle_rate_8);
-
-        static double rotation_feedback_scale_ = 30.0 / 314.0;
+        static double rotation_feedback_scale_ = 30.0 / 516.164384 ;
         feedback_angle = -(feedback_angle + 216.0) * rotation_feedback_scale_;
 
         steer_feedback_msgs.data.clear();
-        steer_feedback_msgs.data.emplace_back(feedback_angle);
+        steer_feedback_msgs.data.emplace_back(feedback_angle - 4.2);
         steer_feedback_msgs.data.emplace_back(feedback_angle_rate);
         swa_steer_pub_.publish(steer_feedback_msgs);
       }
@@ -546,6 +554,12 @@ void CanParser::ReceiveCb(const ros::TimerEvent&) {
           angle_msg.data = 0.1 * static_cast<int16_t>(uint_angle - 65535);
         }
         sas_pub_.publish(angle_msg);
+      } 
+
+      if (it.id == 0x306) {
+        // ROS_WARN_STREAM("crash");
+        // encoder_calculator_.ProcessRawData(it);
+        encoder_calculator_ptr_->ProcessRawData(it);
       }
 
       // id: 0x301 front ->0x303(now)

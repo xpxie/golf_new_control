@@ -53,13 +53,17 @@ void* CanBridge::ReceiveFunc(void* param) {
                                       receive_buffer, 100, 100)) > 0) {
       ros::Time tmp_t = ros::Time::now();
       for (int i = 0; i < receive_length; i++) {
-        // std::cout.setf ( std::ios::hex,std::ios::basefield);;
-        // std::cout << "receive id:" << receive_buffer[i].ID << std::endl;
-        // std::cout.unsetf ( std::ios::hex);
-        // if (receive_buffer[i].ID != 0x2F2 && receive_buffer[i].ID !=
-        // 0x18F01D48)
+
+        // if (receive_buffer[i].ID == 0x714 && receive_buffer[i].ID ==
+        // 0x715)
         // {
-        // 	continue;
+          // std::cout.setf ( std::ios::hex,std::ios::basefield);;
+          // std::cout << "receive id:" << receive_buffer[i].ID << std::endl;
+          // std::cout.unsetf ( std::ios::hex);
+        	// for (int j = 0; i < 8 ; ++j) {
+          //   ROS_WARN_STREAM("data [" << j << "]:" << receive_buffer[i].Data[j]);
+            
+          // }
         // }
         can_tmp_.header.stamp = tmp_t;
         can_tmp_.header.frame_id = "/can";
@@ -177,9 +181,9 @@ bool CanBridge::Write(const vector<can_msgs::Frame>& msgs) {
     }
     if (VCI_Transmit(VCI_USBCAN2, device_index_, can_index_, to_send, 1) > 0) {
 	    ROS_INFO_STREAM("Send suc: " << to_send[0].ID);
-	    for (int i = 0; i < 3; ++i){	
-		    ROS_INFO_STREAM("Data of current frame, index: " << i <<", data: " << static_cast<double>(to_send[0].Data[i]));
-	    }
+	    // for (int i = 0; i < 8; ++i){	
+		  //   ROS_INFO_STREAM("Data of current frame, index: " << i <<", data: " << static_cast<double>(to_send[0].Data[i]));
+	    // }
 
     } else {
 	    ROS_ERROR_STREAM("Transmit error!");

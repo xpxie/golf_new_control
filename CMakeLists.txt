@@ -31,7 +31,11 @@ link_directories(
 )
 
 #add_executable(teleop_node src/teleop_node.cpp)
+
+add_executable(debug src/param_debug.cpp)
+
 add_library(canbridge src/can_bridge.cpp)
+add_library(encoder src/encoder_velocity_to_odom.cpp)
 add_library(nodelet_joy_parser src/joy_parser.cpp)
 add_library(nodelet_cmd_vel_mux src/cmd_vel_mux.cpp)
 add_library(nodelet_can_parser src/can_parser.cpp)
@@ -65,8 +69,10 @@ target_link_libraries(nodelet_golf_can_parser
 target_link_libraries(nodelet_can_parser
         ${catkin_LIBRARIES}
         canbridge
+        encoder
         )
-
+target_link_libraries(debug
+                        ${catkin_LIBRARIES})
 # install( TARGETS
 #     costmap_2d_markers
 #     costmap_2d_cloud
